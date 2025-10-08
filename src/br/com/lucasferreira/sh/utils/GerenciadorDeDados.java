@@ -164,4 +164,57 @@ public class GerenciadorDeDados {
             System.err.println("Erro ao salvar consultas: " + e.getMessage());
         }
     }
+    // Dentro da classe GerenciadorDeDados.java
+
+    public static void salvarInternacoes(String caminhoArquivo, List<Internacao> internacoes) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivo))) {
+            bw.write("paciente_cpf;medico_crm;quarto;data_entrada;data_saida;ativa");
+            bw.newLine();
+            for (Internacao i : internacoes) {
+                String dataSaidaStr = (i.getDataSaida() == null) ? "null" : i.getDataSaida().toString();
+                String linha = String.join(SEPARADOR,
+                        i.getPaciente().getCpf(),
+                        i.getMedicoResponsavel().getCrm(),
+                        String.valueOf(i.getQuarto()),
+                        i.getDataEntrada().toString(),
+                        dataSaidaStr,
+                        String.valueOf(i.isAtiva())
+                );
+                bw.write(linha);
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar internações: " + e.getMessage());
+        }
+    }
+
+    public static List<Internacao> carregarInternacoes(String caminhoArquivo, List<Paciente> pacientes, List<Medico> medicos) {
+        List<Internacao> internacoes = new ArrayList<>();
+        File arquivo = new File(caminhoArquivo);
+        if (!arquivo.exists()) return internacoes;
+
+        Map<String, Paciente> mapaPacientes = pacientes.stream().collect(Collectors.toMap(p -> p.getCpf().replaceAll("[^0-9]", ""), Function.identity()));
+        Map<String, Medico> mapaMedicos = medicos.stream().collect(Collectors.toMap(Medico::getCrm, Function.identity()));
+
+        try (BufferedReader br = new BufferedReader(new FileReader(arquivo))) {
+            br.readLine(); // Pula cabeçalho
+            String linha;
+            while ((linha = br.readLine()) != null) {
+                String[] campos = linha.split(SEPARADOR);
+                Paciente p = mapaPacientes.get(campos[0].replaceAll("[^0-9]", ""));
+                Medico m = mapaMedicos.get(campos[1]);
+                int quarto = Integer.parseInt(campos[2]);
+                LocalDateTime dataEntrada = LocalDateTime.parse(campos[3]);
+                LocalDateTime dataSaida = campos[4].equals("null") ? null : LocalDateTime.parse(campos[4]);
+                boolean ativa = Boolean.parseBoolean(campos[5]);
+
+                if (p != null && m != null) {
+                    internacoes.add(new Internacao(p, m, quarto, dataEntrada, dataSaida, ativa));
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao carregar internações: " + e.getMessage());
+        }
+        return internacoes;
+    }
 }

@@ -2,6 +2,7 @@ package br.com.lucasferreira.sh.Models;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 public class Hospital {
     private List<Paciente> pacientes;
@@ -9,6 +10,8 @@ public class Hospital {
     private Agenda agenda;
     private List<Internacao> internacoes;
     private List<PlanoDeSaude> planos;
+    private List<Integer> quartosDisponiveis;
+    private List<Integer> quartosOcupados;
 
     public Hospital() {
         this.pacientes = new ArrayList<>();
@@ -16,6 +19,11 @@ public class Hospital {
         this.agenda = new Agenda();
         this.internacoes = new ArrayList<>();
         this.planos = new ArrayList<>();
+        this.quartosDisponiveis = new ArrayList<>();
+        this.quartosOcupados = new ArrayList<>();
+        for (int i = 101; i <= 110; i++) {
+            this.quartosDisponiveis.add(i);
+        }
     }
 
     //cadastro
@@ -82,5 +90,70 @@ public class Hospital {
     }
     public List<Internacao> getInternacoes() {
         return this.internacoes;
+    }
+    public void ocuparQuarto(int numeroQuarto) {
+        quartosDisponiveis.remove(Integer.valueOf(numeroQuarto));
+        quartosOcupados.add(numeroQuarto);
+    }
+
+    public void liberarQuarto(int numeroQuarto) {
+        quartosOcupados.remove(Integer.valueOf(numeroQuarto));
+        quartosDisponiveis.add(numeroQuarto);
+        Collections.sort(quartosDisponiveis); // Opcional, para manter a lista ordenada
+    }
+
+    public List<Integer> getQuartosDisponiveis() {
+        return this.quartosDisponiveis;
+    }
+    public void iniciarInternacao(Paciente paciente, Medico medico, int quarto) {
+        if (quartosDisponiveis.contains(quarto)) {
+            Internacao novaInternacao = new Internacao(paciente, medico, quarto);
+            this.internacoes.add(novaInternacao);
+            ocuparQuarto(quarto);
+            System.out.println("INFO: Internação iniciada para " + paciente.getNome() + " no quarto " + quarto + ".");
+        } else {
+            System.out.println("ERRO: O quarto " + quarto + " não está disponível.");
+        }
+    }
+
+    public void finalizarInternacao(Internacao internacao, double custoDiaria) {
+        internacao.darAlta();
+
+        liberarQuarto(internacao.getQuarto());
+
+        long diasInternado = internacao.getDuracaoEmDias();
+        Paciente paciente = internacao.getPaciente();
+        PlanoDeSaude plano = paciente.getPlano();
+        double custoFinal = 0;
+
+        if (plano != null && plano.isCobreInternacaoCurta()) {
+            if (diasInternado <= 7) {
+                custoFinal = 0;
+                System.out.println("INFO: Plano de saúde cobriu integralmente a internação.");
+            } else {
+                custoFinal = (diasInternado - 7) * custoDiaria;
+            }
+        } else {
+            custoFinal = diasInternado * custoDiaria;
+        }
+
+        System.out.println("\n--- ALTA PROCESSADA COM SUCESSO ---");
+        System.out.println("Paciente: " + paciente.getNome());
+        System.out.println("Quarto liberado: " + internacao.getQuarto());
+        System.out.println("Dias internado: " + diasInternado);
+        System.out.printf("Custo final da internação: R$ %.2f\n", custoFinal);
+        System.out.println("------------------------------------");
+    }
+    public void sincronizarQuartos() {
+        this.quartosOcupados.clear();
+        this.quartosDisponiveis.clear();
+        for (int i = 101; i <= 110; i++) {
+            this.quartosDisponiveis.add(i);
+        }
+        for (Internacao internacao : this.internacoes) {
+            if (internacao.isAtiva()) {
+                ocuparQuarto(internacao.getQuarto());
+            }
+        }
     }
 }

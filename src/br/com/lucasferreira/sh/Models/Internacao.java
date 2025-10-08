@@ -1,16 +1,32 @@
 package br.com.lucasferreira.sh.Models;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.ArrayList;
 public class Internacao {
     private Paciente paciente;
+    private final Medico medicoResponsavel;
     private LocalDateTime dataEntrada;
     private LocalDateTime dataSaida;
     public boolean ativa;
+    private final int quarto;
 
-    public Internacao(Paciente paciente){
+
+
+    public Internacao(Paciente paciente, Medico medicoResponsavel, int quarto){
         this.paciente = paciente;
+        this.medicoResponsavel = medicoResponsavel;
         this.dataEntrada = LocalDateTime.now();
         this.ativa = true;
+        this.quarto = quarto;
+    }
+    public Internacao(Paciente paciente, Medico medicoResponsavel, int quarto, LocalDateTime dataEntrada, LocalDateTime dataSaida, boolean ativa) {
+        this.paciente = paciente;
+        this.medicoResponsavel = medicoResponsavel;
+        this.quarto = quarto;
+        this.dataEntrada = dataEntrada;
+        this.dataSaida = dataSaida;
+        this.ativa = ativa;
     }
     public long getDuracaoEmDias(){
         LocalDateTime dataFinal = (this.dataSaida == null) ? LocalDateTime.now() : this.dataSaida;
@@ -38,4 +54,6 @@ public class Internacao {
     public LocalDateTime getDataSaida() {
         return dataSaida;
     }
+    public Medico getMedicoResponsavel() { return medicoResponsavel; }
+    public int getQuarto() { return quarto; }
 }

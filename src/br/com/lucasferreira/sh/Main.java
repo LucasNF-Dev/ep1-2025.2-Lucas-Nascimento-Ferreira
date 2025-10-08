@@ -5,6 +5,7 @@ import br.com.lucasferreira.sh.enums.Especialidade;
 import br.com.lucasferreira.sh.enums.TipoPlano;
 import br.com.lucasferreira.sh.utils.CPFUtil;
 import br.com.lucasferreira.sh.utils.GerenciadorDeDados;
+import java.time.format.DateTimeFormatter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,10 +18,12 @@ public class Main {
     private static Paciente pacienteLogado = null;
     private static boolean isAdminLogado = false;
 
+
     private static final String ARQUIVO_PLANOS = "database/planos.csv";
     private static final String ARQUIVO_MEDICOS = "database/medicos.csv";
     private static final String ARQUIVO_PACIENTES = "database/pacientes.csv";
     private static final String ARQUIVO_CONSULTAS = "database/consultas.csv";
+    private static final String ARQUIVO_INTERNACOES = "database/internacoes.csv";
 
 
     public static void main(String[] args) {
@@ -52,6 +55,10 @@ public class Main {
         List<Consulta> consultas = GerenciadorDeDados.carregarConsultas(ARQUIVO_CONSULTAS, medicos, pacientes);
         hospital.getAgenda().getConsultas().addAll(consultas);
 
+        List<Internacao> internacoes = GerenciadorDeDados.carregarInternacoes(ARQUIVO_INTERNACOES, pacientes, medicos);
+        hospital.getInternacoes().addAll(internacoes);
+        hospital.sincronizarQuartos();
+
         System.out.println("Dados carregados com sucesso!\n");
     }
 
@@ -61,6 +68,7 @@ public class Main {
         GerenciadorDeDados.salvarMedicos(ARQUIVO_MEDICOS, hospital.getMedicos());
         GerenciadorDeDados.salvarPacientes(ARQUIVO_PACIENTES, hospital.getPacientes());
         GerenciadorDeDados.salvarConsultas(ARQUIVO_CONSULTAS, hospital.getAgenda().getConsultas());
+        GerenciadorDeDados.salvarInternacoes(ARQUIVO_INTERNACOES, hospital.getInternacoes());
         System.out.println("Dados salvos com sucesso!");
     }
 
@@ -172,7 +180,7 @@ public class Main {
                 realizarAgendamento();
                 break;
             case 2:
-                System.out.println("Funcionalidade 'Ver Histórico' ainda não implementada.");
+                exibirHistoricoPaciente();
                 break;
             case 0:
                 System.out.println(pacienteLogado.getNome() + ", fazendo logout...");
@@ -182,13 +190,34 @@ public class Main {
                 System.out.println("Opção inválida.");
         }
     }
+    private static void exibirHistoricoPaciente() {
+        System.out.println("\n--- Meu Histórico de Consultas ---");
+        List<Consulta> historico = pacienteLogado.getHistoricoDoPaciente(hospital.getAgenda());
+        if (historico.isEmpty()) {
+            System.out.println("Você ainda não possui consultas em seu histórico.");
+            return;
+        }
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
+
+        for (Consulta consulta : historico) {
+            String dataFormatada = consulta.getDataHora().format(formatador);
+            Medico medico = consulta.getMedico();
+
+            System.out.println("------------------------------------");
+            System.out.println("Data: " + dataFormatada);
+            System.out.println("Médico(a): Dr(a). " + medico.getNome());
+            System.out.println("Especialidade: " + medico.getEspecialidade());
+        }
+        System.out.println("------------------------------------");
+    }
     private static void exibirMenuPrincipalAdmin() {
         System.out.println("\n--- PAINEL DO ADMINISTRADOR ---");
         System.out.println("1. Cadastrar Novo Médico");
         System.out.println("2. Cadastrar Novo Plano de Saúde");
         System.out.println("3. Agendar Consulta para um Paciente");
-        System.out.println("4. Listar todos os Pacientes");
-        System.out.println("5. Listar todos os Médicos");
+        System.out.println("4. Gerenciar Internações"); // NOVO MENU
+        System.out.println("5. Listar todos os Pacientes");
+        System.out.println("6. Listar todos os Médicos");
         System.out.println("0. Fazer Logout (Voltar)");
         System.out.print("Escolha uma opção: ");
 
@@ -198,12 +227,13 @@ public class Main {
             switch (opcao) {
                 case 1: cadastrarNovoMedico(); break;
                 case 2: cadastrarNovoPlano(); break;
-                case 3: realizarAgendamento(); break; // Podemos reaproveitar a função
-                case 4: listarPacientes(); break;
-                case 5: listarMedicos(); break;
+                case 3: realizarAgendamento(); break;
+                case 4: menuGerenciarInternacoes(); break; // NOVO
+                case 5: listarPacientes(); break;
+                case 6: listarMedicos(); break;
                 case 0:
+                    isAdminLogado = false;
                     System.out.println("Saindo do painel de administrador...");
-                    isAdminLogado = false; // A "mágica" do logout do ADM
                     break;
                 default:
                     System.out.println("Opção inválida.");
@@ -211,6 +241,100 @@ public class Main {
         } catch (NumberFormatException e) {
             System.out.println("Opção inválida. Por favor, digite um número.");
         }
+    }
+    private static void menuGerenciarInternacoes() {
+        System.out.println("\n--- Gerenciamento de Internações ---");
+        System.out.println("1. Iniciar Nova Internação");
+        System.out.println("2. Finalizar Internação (Dar Alta)");
+        System.out.println("3. Listar Internações Ativas");
+        System.out.println("0. Voltar ao menu principal");
+        System.out.print("Escolha uma opção: ");
+
+        String input = scanner.nextLine();
+        try {
+            int opcao = Integer.parseInt(input);
+            switch (opcao) {
+                case 1: iniciarNovaInternacao(); break;
+                case 2: finalizarInternacao(); break;
+                case 3: listarInternacoesAtivas(); break;
+                case 0: return; // Volta para o menu do ADM
+                default: System.out.println("Opção inválida.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Opção inválida.");
+        }
+    }
+    private static void listarInternacoesAtivas() {
+        System.out.println("\n--- Internações Ativas ---");
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        boolean encontrouAtivas = false;
+
+        for (Internacao i : hospital.getInternacoes()) {
+            if (i.isAtiva()) {
+                encontrouAtivas = true;
+                System.out.println("------------------------------------");
+                System.out.println("Paciente: " + i.getPaciente().getNome() + " (CPF: " + i.getPaciente().getCpf() + ")");
+                System.out.println("Quarto: " + i.getQuarto());
+                System.out.println("Médico Resp.: " + i.getMedicoResponsavel().getNome());
+                System.out.println("Data de Entrada: " + i.getDataEntrada().format(formatador));
+            }
+        }
+
+        if (!encontrouAtivas) {
+            System.out.println("Nenhuma internação ativa no momento.");
+        }
+        System.out.println("------------------------------------");
+    }
+    private static void finalizarInternacao() {
+        System.out.println("\n--- Finalizar Internação (Dar Alta) ---");
+        listarInternacoesAtivas();
+        System.out.print("Digite o número do quarto para dar alta: ");
+        int quarto = Integer.parseInt(scanner.nextLine());
+
+        Internacao internacaoParaFinalizar = null;
+        for (Internacao i : hospital.getInternacoes()) {
+            if (i.getQuarto() == quarto && i.isAtiva()) {
+                internacaoParaFinalizar = i;
+                break;
+            }
+        }
+
+        if (internacaoParaFinalizar != null) {
+            double custoDiaria = 500.0; // Você pode tornar isso mais dinâmico
+            hospital.finalizarInternacao(internacaoParaFinalizar, custoDiaria);
+        } else {
+            System.out.println("ERRO: Nenhuma internação ativa encontrada para o quarto " + quarto + ".");
+        }
+    }
+    private static void iniciarNovaInternacao() {
+        System.out.println("\n--- Iniciar Nova Internação ---");
+
+        System.out.println("Selecione o paciente a ser internado:");
+        listarPacientes();
+        System.out.print("Digite o CPF do paciente: ");
+        String cpf = scanner.nextLine();
+        Paciente pacienteParaInternar = hospital.buscarPacientePorCpf(cpf);
+        if (pacienteParaInternar == null) {
+            System.out.println("ERRO: Paciente não encontrado.");
+            return;
+        }
+
+        System.out.println("\nSelecione o médico responsável:");
+        listarMedicos();
+        System.out.print("Escolha o médico pelo número: ");
+        int escolhaMedico = Integer.parseInt(scanner.nextLine());
+        Medico medicoResponsavel = hospital.getMedicos().get(escolhaMedico - 1);
+
+        List<Integer> quartosDisponiveis = hospital.getQuartosDisponiveis();
+        if (quartosDisponiveis.isEmpty()) {
+            System.out.println("ERRO: Não há quartos disponíveis no momento.");
+            return;
+        }
+        System.out.println("\nQuartos disponíveis: " + quartosDisponiveis);
+        System.out.print("Digite o número do quarto para a internação: ");
+        int quartoEscolhido = Integer.parseInt(scanner.nextLine());
+
+        hospital.iniciarInternacao(pacienteParaInternar, medicoResponsavel, quartoEscolhido);
     }
     private static void cadastrarNovoMedico() {
         System.out.println("\n--- Cadastro de Novo Médico ---");
@@ -310,10 +434,23 @@ public class Main {
             return;
         }
         System.out.println("\nMédicos disponíveis:");
+        System.out.printf("%-4s %-25s | %-18s | %-7s | %s\n", "Nº", "Nome", "Especialidade", "Rating", "Valor para você");
+        System.out.println("----------------------------------------------------------------------------------");
+
         for (int i = 0; i < medicos.size(); i++) {
             Medico m = medicos.get(i);
-            System.out.printf("%d. Dr(a). %s (%s)\n", (i + 1), m.getNome(), m.getEspecialidade());
+            String estrelas = "★".repeat(m.getRating());
+            Consulta consultaHipotetica = new Consulta(m, pacienteDaConsulta, null);
+            double custoParaPaciente = pacienteDaConsulta.calcularCustoConsulta(consultaHipotetica);
+
+            System.out.printf("%-4d %-25s | %-18s | %-7s | R$ %.2f\n",
+                    (i + 1),
+                    m.getNome(),
+                    m.getEspecialidade(),
+                    estrelas,
+                    custoParaPaciente);
         }
+        System.out.println("----------------------------------------------------------------------------------");
         System.out.print("Escolha o médico pelo número: ");
         String inputMedico = scanner.nextLine();
         int escolhaMedico;
@@ -348,6 +485,22 @@ public class Main {
             return;
         }
         Consulta novaConsulta = new Consulta(medicoEscolhido, pacienteDaConsulta, horarioDesejado);
-        hospital.getAgenda().marcarConsulta(novaConsulta);
+        double custo = pacienteDaConsulta.calcularCustoConsulta(novaConsulta);
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
+        String dataFormatada = horarioDesejado.format(formatador);
+        System.out.println("\n--- RESUMO DA CONSULTA ---");
+        System.out.println("Paciente: " + pacienteDaConsulta.getNome());
+        System.out.println("Consulta marcada para: " + dataFormatada);
+        System.out.println("Com o(a) Médico(a): Dr(a). " + medicoEscolhido.getNome());
+        System.out.println("Especialidade: " + medicoEscolhido.getEspecialidade());
+        System.out.printf("Custo total da consulta: R$ %.2f\n", custo); // %.2f formata para 2 casas decimais
+        System.out.println("--------------------------");
+        System.out.print("Deseja confirmar o agendamento? (s/n): ");
+        String confirmacao = scanner.nextLine();
+        if (confirmacao.equalsIgnoreCase("s")) {
+            hospital.getAgenda().marcarConsulta(novaConsulta);
+        } else {
+            System.out.println("Agendamento cancelado.");
+        }
     }
-}
+    }
