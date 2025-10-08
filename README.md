@@ -6,13 +6,12 @@ Implementar um *Sistema de Gerenciamento Hospitalar* em *Java, aplicando conceit
 ---
 ## Descrição do Projeto
 
-Desenvolvimento de um sistema de gerenciamento hospitalar utilizando os conceitos de orientação a objetos (herança, polimorfismo e encapsulamento) e persistência de dados em arquivos.
-
+Desenvolvimento de um sistema de gerenciamento hospitalar orientado a objetos com interface de linha de comando. O projeto simula as operações de um hospital, permitindo o cadastro de pacientes, médicos e planos de saúde, agendamento de consultas e gerenciamento de internações. O sistema possui dois níveis de acesso (Paciente e Administrador) e garante a persistência de todos os dados em arquivos .csv, carregando-os na inicialização e salvando-os ao final da execução.
 ## Dados do Aluno
 
-- **Nome completo:** [Preencher aqui]
-- **Matrícula:** [Preencher aqui]
-- **Curso:** [Preencher aqui]
+- **Nome completo:** [Lucas Nascimento Ferreira]
+- **Matrícula:** [242024262]
+- **Curso:** [Engenharia de Software]
 - **Turma:** [Preencher aqui]
 
 ---
@@ -20,22 +19,33 @@ Desenvolvimento de um sistema de gerenciamento hospitalar utilizando os conceito
 ## Instruções para Compilação e Execução
 
 1. **Compilação:**  
-   [Descrever aqui como compilar o projeto. Exemplo: `javac Main.java` ou o script usado]
+   [A compilação é gerenciada automaticamente pela IDE ao executar o projeto.
+Para compilação manual via terminal, navegue até a raiz do projeto e execute:
+javac -d out/production -cp src src/br/com/lucasferreira/sh/**/*.java]
 
 2. **Execução:**  
-   [Descrever aqui como executar o projeto. Exemplo: `java Main` ou o script usado]
+   [Via IDE: Localize o arquivo Main.java, clique com o botão direito e selecione a opção "Run".
+Via Linha de Comando (após compilar): Navegue até a raiz do projeto e execute:
+java -cp out/production br.com.lucasferreira.sh.Main]
 
 3. **Estrutura de Pastas:**  
-   [Descrever aqui as principais pastas do projeto]
+   [├── src/                     # Pasta principal com o código-fonte
+   │   └── br/com/lucasferreira/sh/
+   │       ├── enums/           # Contém as enumerações (Especialidade, TipoPlano)
+   │       ├── Models/          # Contém as classes de modelo (Paciente, Medico, Hospital, etc.)
+   │       └── utils/           # Contém as classes utilitárias (CPFUtil, GerenciadorDeDados)
+   │       └── Main.java        # Classe principal que executa o sistema
+   ├── database/                # Pasta que armazena os arquivos de dados (.csv)
+   └── ...                      # Outros arquivos de configuração do projeto]
 
 3. **Versão do JAVA utilizada:**  
-   [Descrever aqui como versão do JAVA utilizada no projeto. Sugestão: `java 21`]
+   [O projeto foi desenvolvido e testado utilizando Java 24 (LTS). Recomenda-se o uso da versão 17 ou superior.]
 
 ---
 
 ## Vídeo de Demonstração
 
-- [Inserir o link para o vídeo no YouTube/Drive aqui]
+- [https://www.youtube.com/watch?v=PSolkVej6Ds]
 
 ---
 
@@ -56,13 +66,21 @@ Desenvolvimento de um sistema de gerenciamento hospitalar utilizando os conceito
 
 ## Observações (Extras ou Dificuldades)
 
-- [Espaço para o aluno comentar qualquer funcionalidade extra que implementou, dificuldades enfrentadas, ou considerações importantes.]
+- [Observações (Extras ou Dificuldades)
+  Funcionalidades e Destaques:
+Arquitetura Robusta: O sistema foi projetado com uma clara separação de responsabilidades, utilizando pacotes para Models, utils e enums, o que facilita a manutenção e escalabilidade.
+Padrão de Projeto Factory: A criação de pacientes (Comum vs. Especial) é gerenciada pela PacienteFactory, abstraindo a lógica de decisão e promovendo o baixo acoplamento entre as classes.
+Sistema de Acesso Duplo: Implementação de dois perfis de usuário (Paciente e Administrador), cada um com seu próprio menu e conjunto de permissões, controlando o acesso a funcionalidades críticas.
+Persistência Completa: Todas as entidades do sistema (Médicos, Pacientes, Planos, Consultas e Internações) são salvas em arquivos .csv ao final da execução e recarregadas no início, garantindo a continuidade dos dados entre as sessões.
+Dificuldades Enfrentadas:
+Uma das principais dificuldades iniciais foi a modelagem da classe Agenda e a implementação da lógica de validação de horários. Como ainda não estava totalmente familiarizado com a sintaxe da linguagem e conceitos mais profundos de Orientação a Objetos, foram necessárias várias refatorações para chegar a uma solução robusta.
+No começo do projeto, a cada nova funcionalidade implementada, percebia-se a necessidade de ajustar atributos e métodos em classes já existentes. Esse processo de refatoração constante foi desafiador, mas fundamental para aprender na prática sobre coesão, acoplamento e a importância de um bom planejamento inicial da arquitetura do software.]
 
 ---
 
 ## Contato
 
-- [Opcional: E-mail pessoal do aluno.]
+- [lucasnferreira.dev@gmail.com]
 
 ---
 
